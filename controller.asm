@@ -61,19 +61,22 @@ Right: .asciz "\nRight"
 	lw t3, 0(t0)		# almaceno en t3 el dato del puerto 0x10002
 	lui t0, 0x10003		# puerto 0x10003	
 	lw t4, 0(t0)		# almaceno en t4 el dato del puerto 0x10003
+	
 
 main:
+	lui t0, 0x10000
+	andi a3,t0, 0x000000F0	# 0x10000 bits de 4 a 7 corresponden a los leds
 	j mouse	
 #---------------------------- MOUSE ---------------------------------------------------------------
 mouse:
 # copio los bits 6 y 7 de la posicion de memoria 0x10001
 	andi a0,t2,0x000000c0	# guardo el valor en hexa de los bits activados
-	bne zero,a0,botMouse		#  si algun boton esta activado
-	beq zero,a0,posMouse		#  si ningun boton esta activado
+	bne zero,a0,botMouse	#  si algun boton esta activado
+	beq zero,a0,posMouse	#  si ningun boton esta activado
 	
 #------------------- Botones del mouse ------------------------------------------------------------
 botMouse:
-	addi s0,zero,0x40		# s0 = 0x40
+	addi s0,zero,0x40	# s0 = 0x40
 	beq s0,a0,actBot1	# si el boton de la derecha esta activado
 	addi s0,s0,0x40		# s0 = 0x80
 	beq s0,a0,actBot2	# si el boton de la izq esta activado
@@ -107,8 +110,8 @@ posMouse:
 teclado:
 # busco primero la fila de la tecla activada
 	andi a1,t2,0x0000003f	# copio los primeros 6 bits de la posicion 0x10001 para obtener la fila	
-	bne zero,a1,buscoFila		# si no se apretó ninguna tecla va al main
-	#beq zero,a1,irAOtroLado
+	bne zero,a1,buscoFila	# si se apreto alguna tecla busco primero la fila
+	beq zero,a1,main	# si no se apretó ninguna tecla va al main
 buscoFila:
 	andi a2,t1,0x0000000f	# copio los primeros 4 bits del puerto 0x10000 para saber la columna	
 	add s2,zero,zero	# bits: 0000, me va a servir para saber la columna
@@ -149,9 +152,9 @@ fila1:	# fila 1 tiene 15 columnas
 	addi s2,s2,0x1	# bit 1010
 	beq s2,a2,impF10 # fila 1, columna 11
 	addi s2,s2,0x1	# bit 1011
-	beq s2,a2,impF11 # fila 1, columna 12
+	beq s2,a2,ledPad # fila 1, columna 12
 	addi s2,s2,0x1	# bit 1100
-	beq s2,a2,impF12 # fila 1, columna 13
+	beq s2,a2,ledNum # fila 1, columna 13
 	addi s2,s2,0x1	# bit 1101
 	beq s2,a2,impPrtSc # fila 1, columna 14
 	addi s2,s2,0x1	# bit 1110
@@ -184,7 +187,7 @@ fila2:	# fila 2 tiene 15 columnas
 	addi s2,s2,0x1	# bit 1100
 	beq s2,a2,impAcento # fila 2, columna 13
 	addi s2,s2,0x1	# bit 1101
-	beq s2,a2,impBorrar # fila 2, columna 14
+	beq s2,a2,ledScroll # fila 2, columna 14
 	addi s2,s2,0x1	# bit 1110
 	beq s2,a2,impHome # fila 2, columna 15
 	
@@ -322,10 +325,6 @@ impF9:	la a0,F9
 		j mostrar
 impF10:	la a0,F10
 		j mostrar
-impF11:	la a0,F11
-		j mostrar
-impF12:	la a0,F12
-		j mostrar
 impPrtSc:	la a0,PrtSc
 			j mostrar
 impPause:	la a0,Pause
@@ -355,8 +354,6 @@ imp0:	li a0,'0'
 impSPreg:	li a0,'?'
 			j mostrar
 impAcento:	li a0,'´'
-			j mostrar
-impBorrar:	la a0,Delete
 			j mostrar
 impHome:	la a0,Home
 			j mostrar
@@ -468,42 +465,53 @@ impRight:	la a0,Right
 			j mostrar
 
 #---------------------------- LEDS ---------------------------------------------------------------	
-# Caps			->  ledCaps
-# Fn + F11		->	ledPad
-# Fn + F12		->  ledNums
-# Fn + Borrar 	->	ledScroll
-# 0x10000 bits de 4 a 7 corresponden a los leds
-	andi a3,t0, 0x000000F0
-#los bits de los led estan guardados en el registro a0
-#encender o apagar Num -> bit 7
-ledNum:
-	addi s3,a0,0x00000080 # 0x00000080 tiene solo el bit 7 en 1 solo
-	beq s3,zero,encNum  #si es igual a zero, esta el bit apagado, entonces se enciende
-#encender o apagar Caps -> bit 6
-ledCaps:
-	addi s2,a0,0x00000040 # 0x00000040 tiene solo el bit 6 en 1
-	beq s2,zero,encCaps #si es igual a zero, esta el bit apagado, entonces se enciende
-ledScroll:
-	addi s2,a0,0x00000020 # 0x00000020 tiene solo el bit 5 en 1
-	beq s2,zero,encScroll #si es igual a zero, esta el bit apagado, entonces se enciende
-#encender o apagar Pad -> bit 4
+# Caps		->  ledCaps
+# F11		->  ledPad
+# F12		->  ledNums
+# Borrar 	->  ledScroll
 ledPad:
-	addi s2,a0,0x00000010	# 0x00000080 tiene solo el bit 4 en 1 solo
-	beq s2,zero,encPad #si es igual a zero, esta el bit apagado, entonces se enciende
-		
-encNum:
-	addi s4,t0,0x00000080
-	sw t0,0(s4) #guarda el valor leido del puerto con el bit del led encendido
-encCaps:
-	addi s4,t0,0x00000040
-	sw t0,0(s4)
-encScroll:
-	addi s4,t0,0x00000020
-	sw t0,0(s4) #guarda el valor leido del puerto con el bit del led encendido
-encPad:
-	addi s4,t0,0x00000010
-	sw t0,0(s4)
-		
+	addi a5,zero,0x10	# tomo los bits 10000
+	and a6,a3,a5		# tomo el bit 4 del valor guardado del puerto
+	bne zero,a6,apPad	# si esta en 1 -> esta encendido y hay que apagarlo
+	add a3,a3,a5		# le sumo el bit 4 (0x10) a a3
+	j guardarLed
+ledScroll:
+	addi a5,zero,0x20
+	and a6,a3,a5		# tomo el bit 5 del valor guardado del puerto
+	bne zero,a6,apScroll	# si esta en 1 -> esta encendido y hay que apagarlo
+	add a3,a3,a5		# le sumo el bit 5 (0x20) a a3
+	j guardarLed
+ledCaps:
+	addi a5,zero,0x40
+	and a6,a3,a5		# tomo el bit 6 del valor guardado del puerto
+	bne zero,a6,apCaps	# si esta en 1 -> esta encendido y hay que apagarlo
+	add a3,a3,a5		# le sumo el bit 6 (0x40) a a3
+	j guardarLed
+ledNum:
+	addi a5,zero,0x80
+	and a6,a3,a5		# tomo el bit 7 del valor guardado del puerto
+	bne zero,a6,apNum	# si esta en 1 -> esta encendido y hay que apagarlo
+	add a3,a3,a5		# le sumo el bit 7 (0x80) a a3
+	j guardarLed
+apPad:
+	addi a5,zero,0xe0	# tomo los bits del 5 al 7 en 1 y el 4 en 0
+	and a3,a3,a5		# hago un and para poner el bit 4 en 0 y el resto mantenga su valor
+	j guardarLed
+apScroll:
+	addi a5,zero,0xd0	# tomo los bits 4,6,7 en 1 y el 5 en 0
+	and a3,a3,a5		# hago un and para poner el bit 5 en 0 y el resto mantenga su valor
+	j guardarLed
+apCaps:
+	addi a5,zero,0xb0	# tomo los bits 4,5,7 en 1 y el 6 en 0
+	and a3,a3,a5		# hago un and para poner el bit 6 en 0 y el resto mantenga su valor
+	j guardarLed
+apNum:
+	addi a5,zero,0x70	# tomo los bits 4,5,6 en 1 y el 7 en 0
+	and a3,a3,a5		# hago un and para poner el bit 7 en 0 y el resto mantenga su valor
+	j guardarLed
+guardarLed:
+	sw a3,(t1)	# guardo el valor del led
+	j main
 mostrar:
 	addi a7,zero,4	#mostrar la tecla o boton pulsada
 	ecall
