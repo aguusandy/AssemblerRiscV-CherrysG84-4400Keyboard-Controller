@@ -5,7 +5,7 @@
 # "Esc,F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,PrtSc,Pause"
 # "^,1,2,3,4,5,6,7,8,9,0,?,',Del,Home"
 # "Tab,q,w,e,r,t,z,u,i,o,p,u,+,Enter,Pg Up"
-# "Caps,a,s,d,f,g,h,j,k,l,O¨,A¨,',Pg On,"
+# "Caps,a,s,d,f,g,h,j,k,l,OÂ¨,AÂ¨,',Pg On,"
 # "ShifL,<,y,x,c,v,b,n,m,;,.,-,ShiftR,Up,End"
 # "Fn,Ctrl,Alt,Space,Alt Gr,Insert,Delete,Left,Down,Right, , , , , "
 .data
@@ -32,9 +32,9 @@ Del: .asciz "\nDelete"
 Home: .asciz "\nHome"
 Enter: .asciz "\nEnter"
 PgUp: .asciz "\nPg Up"
-O2: .asciz "\nO¨"
-A2: .asciz "\nA¨"
-U2: .asciz "\nU¨"
+O2: .asciz "\nOÂ¨"
+A2: .asciz "\nAÂ¨"
+U2: .asciz "\nUÂ¨"
 PgDn: .asciz "\nPg Dn"
 ShiftL: .asciz "\nShifL"
 ShiftR: .asciz "\nShiftR"
@@ -111,7 +111,7 @@ teclado:
 # busco primero la fila de la tecla activada
 	andi a1,t2,0x0000003f	# copio los primeros 6 bits de la posicion 0x10001 para obtener la fila	
 	bne zero,a1,buscoFila	# si se apreto alguna tecla busco primero la fila
-	beq zero,a1,main	# si no se apretó ninguna tecla va al main
+	beq zero,a1,main	# si no se apretÃ³ ninguna tecla va al main
 buscoFila:
 	andi a2,t1,0x0000000f	# copio los primeros 4 bits del puerto 0x10000 para saber la columna	
 	add s2,zero,zero	# bits: 0000, me va a servir para saber la columna
@@ -353,7 +353,7 @@ imp0:	li a0,'0'
 		j mostrar
 impSPreg:	li a0,'?'
 			j mostrar
-impAcento:	li a0,'´'
+impAcento:	li a0,'Â´'
 			j mostrar
 impHome:	la a0,Home
 			j mostrar
@@ -464,6 +464,7 @@ impDown:	la a0,Down
 impRight:	la a0,Right
 			j mostrar
 
+
 #---------------------------- LEDS ---------------------------------------------------------------	
 # Caps		->  ledCaps
 # F11		->  ledPad
@@ -472,42 +473,29 @@ impRight:	la a0,Right
 ledPad:
 	addi a5,zero,0x10	# tomo los bits 10000
 	and a6,a3,a5		# tomo el bit 4 del valor guardado del puerto
-	bne zero,a6,apPad	# si esta en 1 -> esta encendido y hay que apagarlo
+	bne zero,a6,apagar	# si esta en 1 -> esta encendido y hay que apagarlo
 	add a3,a3,a5		# le sumo el bit 4 (0x10) a a3
 	j guardarLed
 ledScroll:
 	addi a5,zero,0x20
 	and a6,a3,a5		# tomo el bit 5 del valor guardado del puerto
-	bne zero,a6,apScroll	# si esta en 1 -> esta encendido y hay que apagarlo
+	bne zero,a6,apagar	# si esta en 1 -> esta encendido y hay que apagarlo
 	add a3,a3,a5		# le sumo el bit 5 (0x20) a a3
 	j guardarLed
 ledCaps:
 	addi a5,zero,0x40
 	and a6,a3,a5		# tomo el bit 6 del valor guardado del puerto
-	bne zero,a6,apCaps	# si esta en 1 -> esta encendido y hay que apagarlo
+	bne zero,a6,apagar	# si esta en 1 -> esta encendido y hay que apagarlo
 	add a3,a3,a5		# le sumo el bit 6 (0x40) a a3
 	j guardarLed
 ledNum:
 	addi a5,zero,0x80
 	and a6,a3,a5		# tomo el bit 7 del valor guardado del puerto
-	bne zero,a6,apNum	# si esta en 1 -> esta encendido y hay que apagarlo
+	bne zero,a6,apagar	# si esta en 1 -> esta encendido y hay que apagarlo
 	add a3,a3,a5		# le sumo el bit 7 (0x80) a a3
 	j guardarLed
-apPad:
-	addi a5,zero,0xe0	# tomo los bits del 5 al 7 en 1 y el 4 en 0
-	and a3,a3,a5		# hago un and para poner el bit 4 en 0 y el resto mantenga su valor
-	j guardarLed
-apScroll:
-	addi a5,zero,0xd0	# tomo los bits 4,6,7 en 1 y el 5 en 0
-	and a3,a3,a5		# hago un and para poner el bit 5 en 0 y el resto mantenga su valor
-	j guardarLed
-apCaps:
-	addi a5,zero,0xb0	# tomo los bits 4,5,7 en 1 y el 6 en 0
-	and a3,a3,a5		# hago un and para poner el bit 6 en 0 y el resto mantenga su valor
-	j guardarLed
-apNum:
-	addi a5,zero,0x70	# tomo los bits 4,5,6 en 1 y el 7 en 0
-	and a3,a3,a5		# hago un and para poner el bit 7 en 0 y el resto mantenga su valor
+apagar:
+	sub a3,a5,a3
 	j guardarLed
 guardarLed:
 	sw a3,(t1)	# guardo el valor del led
