@@ -1,14 +1,7 @@
 
 .# Controlador Cherry G84-4400
 
-#  Matriz del teclado
-# "Esc,F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,PrtSc,Pause"
-# "^,1,2,3,4,5,6,7,8,9,0,?,',Del,Home"
-# "Tab,q,w,e,r,t,z,u,i,o,p,u,+,Enter,Pg Up"
-# "Caps,a,s,d,f,g,h,j,k,l,O¨,A¨,',Pg On,"
-# "ShifL,<,y,x,c,v,b,n,m,;,.,-,ShiftR,Up,End"
-# "Fn,Ctrl,Alt,Space,Alt Gr,Insert,Delete,Left,Down,Right, , , , , "
-.data
+	.data
 msgB1: .asciz "Boton1"
 msgB2: .asciz "Boton2"
 msgAmbos: .asciz "Boton 1 y 2"
@@ -32,9 +25,9 @@ Del: .asciz "\nDelete"
 Home: .asciz "\nHome"
 Enter: .asciz "\nEnter"
 PgUp: .asciz "\nPg Up"
-O2: .asciz "\nO¨"
-A2: .asciz "\nA¨"
-U2: .asciz "\nU¨"
+O2: .asciz "\nO�"
+A2: .asciz "\nA�"
+U2: .asciz "\nU�"
 PgDn: .asciz "\nPg Dn"
 ShiftL: .asciz "\nShifL"
 ShiftR: .asciz "\nShiftR"
@@ -53,7 +46,7 @@ Right: .asciz "\nRight"
 
 .text
 # cargamos las posiciones de memoria del puerto
-	lui t0, 0x10000		# puerto 0x10000
+	lui t0, 0x10000		# puerto 0x10000	
 	lw t1, 0(t0)		# almaceno en t1 el dato del puerto 0x10000
 	lui t0, 0x10001		# puerto 0x10001	
 	lw t2, 0(t0)		# almaceno en t2 el dato del puerto 0x10001
@@ -111,7 +104,7 @@ teclado:
 # busco primero la fila de la tecla activada
 	andi a1,t2,0x0000003f	# copio los primeros 6 bits de la posicion 0x10001 para obtener la fila	
 	bne zero,a1,buscoFila	# si se apreto alguna tecla busco primero la fila
-	beq zero,a1,main	# si no se apretó ninguna tecla va al main
+	beq zero,a1,main	# si no se apret� ninguna tecla va al main
 buscoFila:
 	andi a2,t1,0x0000000f	# copio los primeros 4 bits del puerto 0x10000 para saber la columna	
 	add s2,zero,zero	# bits: 0000, me va a servir para saber la columna
@@ -353,7 +346,7 @@ imp0:	li a0,'0'
 		j mostrar
 impSPreg:	li a0,'?'
 			j mostrar
-impAcento:	li a0,'´'
+impAcento:	li a0,'�'
 			j mostrar
 impHome:	la a0,Home
 			j mostrar
@@ -463,7 +456,6 @@ impDown:	la a0,Down
 			j mostrar
 impRight:	la a0,Right
 			j mostrar
-
 
 #---------------------------- LEDS ---------------------------------------------------------------	
 # Caps		->  ledCaps
